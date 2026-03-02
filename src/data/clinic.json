@@ -1,0 +1,63 @@
+{
+  "name": "OdontoVida Clínica",
+  "tagline": "Cuidando do seu sorriso com tecnologia e carinho",
+  "primaryColor": "#0ea5e9",
+  "primaryColorDark": "#0284c7",
+  "primaryColorLight": "#e0f2fe",
+  "logo": null,
+  "address": {
+    "street": "Rua das Flores, 1234",
+    "neighborhood": "Centro",
+    "city": "Porto Alegre",
+    "state": "RS",
+    "zip": "90010-000",
+    "mapsUrl": "https://maps.google.com"
+  },
+  "phone": "5154996301102",
+  "whatsapp": "54996301102",
+  "email": "contato@odontovida.com.br",
+  "hours": {
+    "weekdays": "Segunda a Sexta: 8h às 18h",
+    "saturday": "Sábado: 8h às 12h",
+    "sunday": "Domingo: Fechado",
+    "emergency": "Urgências: Consulte disponibilidade via WhatsApp"
+  },
+  "services": [
+    "Clínica Geral",
+    "Ortodontia (Aparelho)",
+    "Implantes Dentários",
+    "Clareamento Dental",
+    "Tratamento de Canal",
+    "Próteses Dentárias",
+    "Periodontia (Gengiva)",
+    "Odontopediatria (Crianças)",
+    "Cirurgia Oral",
+    "Estética Dental"
+  ],
+  "insurances": [
+    "Unimed",
+    "Bradesco Saúde",
+    "SulAmérica",
+    "Amil",
+    "Porto Seguro",
+    "Odonto Empresas",
+    "Particular"
+  ],
+  "differentials": [
+    "Atendimento humanizado e sem julgamentos",
+    "Equipamentos de última geração",
+    "Profissionais com especialização e experiência",
+    "Ambiente climatizado e confortável",
+    "Agendamento fácil via WhatsApp ou chatbot",
+    "Parcelamento em até 12x sem juros"
+  ],
+  "socialMedia": {
+    "instagram": "https://instagram.com/odontovida",
+    "facebook": "https://facebook.com/odontovida"
+  },
+  "chatbot": {
+    "greeting": "Olá! Seja bem-vindo(a) à OdontoVida Clínica. Sou o assistente virtual da clínica e estou aqui para ajudar você. Como posso te ajudar hoje?",
+    "maxMessages": 20,
+    "sessionTimeout": 1800
+  }
+}

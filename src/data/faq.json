@@ -1,0 +1,107 @@
+[
+  {
+    "id": 1,
+    "category": "agendamento",
+    "keywords": ["agendar", "consulta", "marcar", "horário", "disponibilidade", "agenda"],
+    "question": "Como faço para agendar uma consulta?",
+    "answer": "Você pode agendar sua consulta de três formas: diretamente pelo nosso WhatsApp, pelo chatbot aqui no site ou ligando para nossa recepção durante o horário de atendimento.\n\nNosso horário de atendimento é de segunda a sexta das 8h às 18h, e aos sábados das 8h às 12h.\n\nPara agilizar o agendamento, tenha em mãos seu nome completo, data de nascimento e dados do convênio (se houver)."
+  },
+  {
+    "id": 2,
+    "category": "urgencia",
+    "keywords": ["urgência", "emergência", "dor", "dente quebrado", "acidente", "urgente", "hoje"],
+    "question": "Vocês atendem urgências odontológicas?",
+    "answer": "Sim, atendemos urgências odontológicas! Em casos de dor intensa, dente quebrado ou outros problemas agudos, entre em contato imediatamente pelo nosso WhatsApp.\n\nInforme que é uma urgência para que possamos verificar a disponibilidade de encaixe no mesmo dia ou no próximo horário disponível.\n\nEm caso de trauma grave (queda com perda de dente), procure o pronto-socorro mais próximo e em seguida nos acione."
+  },
+  {
+    "id": 3,
+    "category": "convenio",
+    "keywords": ["convênio", "plano", "unimed", "bradesco", "amil", "sulamerica", "porto seguro", "cobertura"],
+    "question": "Quais convênios vocês aceitam?",
+    "answer": "Trabalhamos com os principais convênios: Unimed, Bradesco Saúde, SulAmérica, Amil, Porto Seguro e Odonto Empresas.\n\nSe o seu convênio não estiver na lista, entre em contato conosco. Estamos sempre ampliando nossa rede de convênios.\n\nTambém atendemos pacientes particulares com condições especiais de pagamento, incluindo parcelamento em até 12x sem juros."
+  },
+  {
+    "id": 4,
+    "category": "preco",
+    "keywords": ["preço", "valor", "custo", "quanto custa", "orçamento", "consulta grátis", "gratuita"],
+    "question": "Qual o valor da consulta?",
+    "answer": "Os valores variam de acordo com o procedimento e dependem de uma avaliação prévia. Para convênios, os preços seguem a tabela do plano.\n\nPara pacientes particulares, oferecemos consulta de avaliação e elaboramos um plano de tratamento com orçamento detalhado sem compromisso.\n\nEntre em contato pelo WhatsApp para obter informações sobre valores específicos para o seu caso."
+  },
+  {
+    "id": 5,
+    "category": "clareamento",
+    "keywords": ["clareamento", "branquear", "dente amarelo", "manchas", "estética", "sorriso branco"],
+    "question": "Como funciona o clareamento dental?",
+    "answer": "Oferecemos duas modalidades de clareamento dental: o clareamento a laser feito em clínica (resultado imediato em 1 a 2 sessões) e o clareamento caseiro com moldeiras personalizadas (resultado em 2 a 3 semanas).\n\nAntes do procedimento, realizamos uma avaliação para verificar se o seu caso é indicado para clareamento e qual a modalidade mais adequada.\n\nOs resultados podem durar de 1 a 3 anos, dependendo dos hábitos alimentares e de higiene bucal."
+  },
+  {
+    "id": 6,
+    "category": "implante",
+    "keywords": ["implante", "dente perdido", "osseointegração", "titânio", "prótese fixa"],
+    "question": "Como funciona o implante dentário?",
+    "answer": "O implante dentário é um parafuso de titânio inserido no osso que substitui a raiz do dente perdido. Após a osseointegração (de 3 a 6 meses), é colocada a coroa protética sobre o implante.\n\nO procedimento é feito com anestesia local e é muito menos desconfortável do que as pessoas imaginam. É considerado a solução mais moderna e duradoura para dentes perdidos.\n\nPara saber se você é candidato ao implante, agende uma avaliação. Realizamos exames de imagem para planejamento completo do caso."
+  },
+  {
+    "id": 7,
+    "category": "ortodontia",
+    "keywords": ["aparelho", "ortodontia", "alinhamento", "dente torto", "invisalign", "alinhador"],
+    "question": "Vocês fazem aparelho ortodôntico?",
+    "answer": "Sim! Trabalhamos com aparelhos metálicos tradicionais, aparelhos estéticos (cerâmica ou safira) e alinhadores invisíveis (similar ao Invisalign).\n\nO tipo mais indicado depende de cada caso. Realizamos uma avaliação ortodôntica completa com análise de modelos e radiografias para indicar o melhor tratamento.\n\nO tempo de tratamento varia de acordo com a complexidade, podendo durar de 12 a 36 meses. Parcelamos o tratamento sem juros."
+  },
+  {
+    "id": 8,
+    "category": "canal",
+    "keywords": ["canal", "endodontia", "dente inflamado", "abscesso", "infecção", "dor de dente"],
+    "question": "O tratamento de canal dói muito?",
+    "answer": "Com as técnicas modernas e anestesia adequada, o tratamento de canal é indolor durante o procedimento. A sensação de dor após o procedimento é mínima e controlada com analgésicos comuns.\n\nO maior desconforto costuma ser o medo e a ansiedade antes do tratamento, não o tratamento em si. Trabalhamos para deixar você tranquilo durante toda a consulta.\n\nO tratamento de canal salva o dente e elimina a infecção. É muito melhor do que a extração na maioria dos casos."
+  },
+  {
+    "id": 9,
+    "category": "criancas",
+    "keywords": ["criança", "bebê", "infantil", "odontopediatria", "filho", "primeira consulta criança"],
+    "question": "A partir de qual idade a criança pode ser atendida?",
+    "answer": "Recomendamos a primeira visita ao dentista por volta dos 12 meses de idade, quando os primeiros dentinhos aparecem. Quanto antes, melhor!\n\nNossa equipe de odontopediatria é especializada no atendimento infantil, usando técnicas lúdicas para tornar a experiência positiva e sem traumas.\n\nO objetivo é criar o hábito de cuidar dos dentes desde cedo e detectar problemas no início, quando são mais fáceis de tratar."
+  },
+  {
+    "id": 10,
+    "category": "higiene",
+    "keywords": ["escovação", "fio dental", "higiene bucal", "limpeza", "profilaxia", "tártaro"],
+    "question": "Com que frequência devo fazer limpeza dental?",
+    "answer": "A limpeza profissional (profilaxia) deve ser feita a cada 6 meses para a maioria das pessoas. Em casos de maior acúmulo de tártaro ou doenças gengivais, pode ser necessário a cada 3 ou 4 meses.\n\nA limpeza profissional remove o tártaro que não é possível eliminar apenas com escovação em casa, prevenindo cáries e doenças na gengiva.\n\nSempre consulte o seu dentista para definir o intervalo ideal para o seu caso."
+  },
+  {
+    "id": 11,
+    "category": "pagamento",
+    "keywords": ["parcelar", "pagamento", "cartão", "pix", "boleto", "crédito", "débito", "forma de pagamento"],
+    "question": "Quais formas de pagamento vocês aceitam?",
+    "answer": "Aceitamos cartão de crédito (parcelamento em até 12x sem juros), cartão de débito, PIX e dinheiro.\n\nPara tratamentos de maior valor, podemos criar um plano de pagamento personalizado. Consulte nossa recepção para mais detalhes.\n\nConvênios são aceitos conforme cobertura do plano de cada paciente."
+  },
+  {
+    "id": 12,
+    "category": "localizacao",
+    "keywords": ["endereço", "localização", "onde fica", "como chegar", "estacionamento", "ônibus"],
+    "question": "Onde fica a clínica e como chegar?",
+    "answer": "Estamos localizados na Rua das Flores, 1234, Centro, Porto Alegre - RS, CEP 90010-000.\n\nTemos estacionamento nas imediações e somos bem servidos por transporte público. Clique no link do mapa que aparece no site para ver as rotas.\n\nQualquer dúvida sobre como chegar, nos mande mensagem pelo WhatsApp que te ajudamos!"
+  },
+  {
+    "id": 13,
+    "category": "primeira_consulta",
+    "keywords": ["primeira consulta", "primeira vez", "novo paciente", "nunca fui", "o que trazer"],
+    "question": "O que preciso levar na primeira consulta?",
+    "answer": "Para a primeira consulta, traga: documento de identidade com foto, CPF, carteirinha do convênio (se tiver), exames e radiografias anteriores (se houver) e lista de medicamentos que usa regularmente.\n\nSe você tiver alergia a medicamentos, especialmente anestésicos, informe a recepção no agendamento.\n\nChegue com 10 minutos de antecedência para preencher a ficha cadastral."
+  },
+  {
+    "id": 14,
+    "category": "ansiedade",
+    "keywords": ["medo", "ansiedade", "fobia", "nervoso", "sedação", "ansioso", "tenho medo"],
+    "question": "Atendem pacientes com medo ou ansiedade do dentista?",
+    "answer": "Sim, com certeza! Sabemos que muitas pessoas têm medo do dentista, e trabalhamos com técnicas especiais para tornar a experiência mais tranquila.\n\nConversamos antes do procedimento para entender seus medos, explicamos tudo que será feito e fazemos pausas quando necessário. Em casos de ansiedade intensa, podemos indicar sedação consciente com medicamento oral.\n\nSeu conforto é nossa prioridade. Não existe julgamento aqui, só cuidado."
+  },
+  {
+    "id": 15,
+    "category": "pos_tratamento",
+    "keywords": ["extração", "após extração", "pós operatório", "cuidados", "cicatrização", "sangramento"],
+    "question": "Quais os cuidados após uma extração dentária?",
+    "answer": "Após uma extração, mantenha a gaze por 30 a 40 minutos fazendo pressão leve. Nas primeiras 24 horas, evite alimentos quentes, bebidas alcoólicas, cigarro e esforço físico.\n\nNão cuspa, bocoche forte nem use canudo, pois isso pode deslocar o coágulo e causar a 'alvéolite' (dor intensa). Aplique gelo externamente se necessário.\n\nSe o sangramento não cessar, a dor aumentar após 2 dias ou aparecer febre, entre em contato conosco imediatamente."
+  }
+]
