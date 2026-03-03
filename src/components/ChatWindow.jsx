@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import MessageBubble from './MessageBubble'
+import ChatModeSelector from './ChatModeSelector'
 import clinic from '../data/clinic.json'
 import { buildWhatsAppUrl, saveLeadData, getLeadData } from '../utils/whatsapp'
 
@@ -29,9 +30,20 @@ const LEAD_QUESTIONS = [
 ]
 
 /**
+ * Keywords that suggest the user in "question" mode wants to book.
+ * When detected, the bot offers to switch to booking mode.
+ */
+const BOOKING_HINTS = [
+  'agendar', 'agendamento', 'marcar', 'consulta', 'horário',
+  'horario', 'disponível', 'disponivel', 'vaga', 'atender',
+]
+
+/**
  * The full chat window: message list + input bar.
  * Handles API calls, session state, typing indicators,
- * and lead qualification flow.
+ * lead qualification flow, and chatMode selection.
+ *
+ * chatMode: null (awaiting selection) | "booking" | "question"
  */
 export default function ChatWindow({ onClose }) {
   const [messages, setMessages] = useState([])
@@ -41,8 +53,11 @@ export default function ChatWindow({ onClose }) {
   const [blockedMessage, setBlockedMessage] = useState('')
   const [sessionId] = useState(getOrCreateSessionId)
   const [leadData, setLeadData] = useState(() => getLeadData())
-  const [qualifyStep, setQualifyStep] = useState(0) // 0..5 = asking, 6+ = done
+  const [qualifyStep, setQualifyStep] = useState(0)
   const [qualifyDone, setQualifyDone] = useState(false)
+  const [chatMode, setChatMode] = useState(null) // null | "booking" | "question"
+  const [showModeSelector, setShowModeSelector] = useState(false)
+  const [hasOfferedBooking, setHasOfferedBooking] = useState(false)
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
   const hasGreeted = useRef(false)
@@ -54,14 +69,14 @@ export default function ChatWindow({ onClose }) {
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages, scrollToBottom])
+  }, [messages, showModeSelector, scrollToBottom])
 
   // Persist lead data whenever it changes
   useEffect(() => {
     saveLeadData(leadData)
   }, [leadData])
 
-  // Send greeting + first qualification question on first open
+  // Send greeting on first open, then show mode selector
   useEffect(() => {
     if (hasGreeted.current) return
     hasGreeted.current = true
@@ -74,22 +89,15 @@ export default function ChatWindow({ onClose }) {
     }
     setMessages([greeting])
 
-    // Show first qualification question shortly after greeting
+    // Show mode selector after a brief delay
     setTimeout(() => {
-      const firstQ = {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: LEAD_QUESTIONS[0].question,
-        timestamp: Date.now(),
-      }
-      setMessages((prev) => [...prev, firstQ])
-    }, 800)
-
-    setTimeout(() => inputRef.current?.focus(), 400)
+      setShowModeSelector(true)
+    }, 600)
   }, [])
 
-  // Push subsequent qualification questions (step 1+)
+  // Push subsequent qualification questions (step 1+) in booking mode
   useEffect(() => {
+    if (chatMode !== 'booking') return
     if (qualifyDone || qualifyStep === 0 || qualifyStep >= LEAD_QUESTIONS.length) return
 
     const timer = setTimeout(() => {
@@ -104,7 +112,76 @@ export default function ChatWindow({ onClose }) {
     }, 500)
 
     return () => clearTimeout(timer)
-  }, [qualifyStep, qualifyDone])
+  }, [qualifyStep, qualifyDone, chatMode])
+
+  /**
+   * Called when user picks a mode from the selector buttons.
+   */
+  function handleModeSelect(mode) {
+    setChatMode(mode)
+    setShowModeSelector(false)
+
+    if (mode === 'booking') {
+      // Start qualification flow
+      setTimeout(() => {
+        const introMsg = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: 'Ótimo! Vou te fazer algumas perguntas rápidas para agilizar seu agendamento. 😊',
+          timestamp: Date.now(),
+        }
+        setMessages((prev) => [...prev, introMsg])
+
+        setTimeout(() => {
+          const firstQ = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: LEAD_QUESTIONS[0].question,
+            timestamp: Date.now(),
+          }
+          setMessages((prev) => [...prev, firstQ])
+          inputRef.current?.focus()
+        }, 600)
+      }, 300)
+    } else {
+      // Question mode — prompt free chat
+      setTimeout(() => {
+        const promptMsg = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: 'Sem problemas! Pode perguntar o que quiser sobre nossos tratamentos, horários, convênios ou qualquer outra dúvida. Estou aqui para ajudar! 😊',
+          timestamp: Date.now(),
+        }
+        setMessages((prev) => [...prev, promptMsg])
+        inputRef.current?.focus()
+      }, 300)
+    }
+  }
+
+  /**
+   * When in question mode, detect if user mentions booking-related keywords.
+   * If so, offer to switch to booking mode (only once).
+   */
+  function checkForBookingIntent(userText) {
+    if (chatMode !== 'question' || hasOfferedBooking) return false
+    const lower = userText.toLowerCase()
+    const wantsBooking = BOOKING_HINTS.some((hint) => lower.includes(hint))
+    if (wantsBooking) {
+      setHasOfferedBooking(true)
+      setTimeout(() => {
+        setShowModeSelector(true)
+        const offerMsg = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: 'Parece que você quer agendar uma consulta! Posso te guiar pelo processo rápido de pré-triagem, ou se preferir, continue tirando suas dúvidas aqui mesmo.',
+          timestamp: Date.now(),
+        }
+        setMessages((prev) => [...prev, offerMsg])
+      }, 800)
+      return true
+    }
+    return false
+  }
 
   function advanceQualification(text) {
     const currentQ = LEAD_QUESTIONS[qualifyStep]
@@ -151,13 +228,19 @@ export default function ChatWindow({ onClose }) {
     setMessages((prev) => [...prev, userMsg])
     setInput('')
 
-    // If qualification is still in progress, handle locally (no API call)
-    if (!qualifyDone && qualifyStep < LEAD_QUESTIONS.length) {
+    // If in booking mode and qualification is still in progress, handle locally
+    if (chatMode === 'booking' && !qualifyDone && qualifyStep < LEAD_QUESTIONS.length) {
       advanceQualification(text)
       return
     }
 
-    // After qualification is done, send to API
+    // In question mode, check if user wants to book
+    if (chatMode === 'question') {
+      const offered = checkForBookingIntent(text)
+      if (offered) return // Wait for mode re-selection
+    }
+
+    // Send to API (after qualification or in question mode)
     setIsLoading(true)
 
     try {
@@ -260,6 +343,13 @@ export default function ChatWindow({ onClose }) {
 
   const whatsappUrl = buildWhatsAppUrl(leadData)
 
+  // Determine input placeholder based on current state
+  function getPlaceholder() {
+    if (!chatMode) return 'Escolha uma opção acima...'
+    if (chatMode === 'booking' && !qualifyDone) return 'Responda aqui...'
+    return 'Digite sua mensagem...'
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -318,6 +408,11 @@ export default function ChatWindow({ onClose }) {
           <MessageBubble key={msg.id} message={msg} leadData={leadData} />
         ))}
 
+        {/* Mode selector (shown after greeting or when booking is offered) */}
+        {showModeSelector && (
+          <ChatModeSelector onSelect={handleModeSelect} />
+        )}
+
         {isLoading && <TypingIndicator />}
 
         <div ref={messagesEndRef} />
@@ -353,19 +448,15 @@ export default function ChatWindow({ onClose }) {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={
-              !qualifyDone
-                ? 'Responda aqui...'
-                : 'Digite sua mensagem...'
-            }
+            placeholder={getPlaceholder()}
             maxLength={500}
-            disabled={isLoading}
+            disabled={isLoading || !chatMode}
             className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors disabled:opacity-50 placeholder-gray-400"
             style={{ '--tw-ring-color': clinic.primaryColor }}
           />
           <button
             type="submit"
-            disabled={!input.trim() || isLoading}
+            disabled={!input.trim() || isLoading || !chatMode}
             className="w-10 h-10 rounded-xl flex items-center justify-center text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
             style={{ backgroundColor: clinic.primaryColor }}
             aria-label="Enviar mensagem"
