@@ -18,11 +18,6 @@
  *  - Track per-client usage via tenant_id
  */
 
-import { createRequire } from 'module'
-const require = createRequire(import.meta.url)
-
-// Vercel serves static JSON from the project root at runtime.
-// We import them with require() so the function works in the Node runtime.
 import clinicData from '../src/data/clinic.json' assert { type: 'json' }
 import faqData from '../src/data/faq.json' assert { type: 'json' }
 
