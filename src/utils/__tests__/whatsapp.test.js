@@ -17,8 +17,8 @@ describe('renderTemplate', () => {
 
 describe('buildWhatsAppUrl', () => {
   beforeEach(() => {
-    sessionStorage.clear()
-    localStorage.clear()
+    if (typeof sessionStorage !== 'undefined') sessionStorage.clear()
+    if (typeof localStorage !== 'undefined') localStorage.clear()
   })
 
   it('returns a valid wa.me URL', () => {
