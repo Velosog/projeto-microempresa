@@ -49,13 +49,18 @@ export default function ServicesSection() {
             return (
               <div
                 key={service}
+                role="button"
+                tabIndex={0}
+                aria-expanded={isOpen}
+                aria-label={`${service} – clique para ${isOpen ? 'fechar' : 'ver'} detalhes`}
                 onClick={() => handleToggle(i)}
-                className={`group flex flex-col items-center text-center p-6 rounded-2xl bg-white border transition-all duration-500 cursor-pointer select-none ${
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleToggle(i) } }}
+                className={`group flex flex-col items-center text-center p-6 rounded-2xl bg-white border transition-all duration-500 cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
                   isOpen
                     ? 'border-gray-300 shadow-xl shadow-black/[0.05] -translate-y-1 ring-1'
                     : 'border-gray-100/80 hover:border-gray-200 hover:shadow-xl hover:shadow-black/[0.03] hover:-translate-y-1'
                 }`}
-                style={isOpen ? { '--tw-ring-color': clinic.primaryColor + '40' } : {}}
+                style={isOpen ? { '--tw-ring-color': clinic.primaryColor + '40' } : { '--tw-ring-color': clinic.primaryColor + '60' }}
               >
                 <div
                   className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 ${

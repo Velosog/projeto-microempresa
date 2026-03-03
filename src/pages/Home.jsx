@@ -18,7 +18,7 @@ export default function Home() {
   const { whatsappUrl } = useClinic()
 
   return (
-    <main className="min-h-screen font-sans antialiased text-gray-900 bg-white overflow-x-hidden">
+    <main id="main-content" className="min-h-screen font-sans antialiased text-gray-900 bg-white overflow-x-hidden">
       <NavBar whatsappUrl={whatsappUrl} />
       <HeroSection whatsappUrl={whatsappUrl} />
       <BenefitsSection />

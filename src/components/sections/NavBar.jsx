@@ -13,15 +13,23 @@ export default function NavBar({ whatsappUrl }) {
 
   return (
     <header
+      role="banner"
       className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ${
         scrolled
           ? 'bg-white/90 backdrop-blur-xl shadow-lg shadow-black/[0.03] border-b border-gray-100/80'
           : 'bg-transparent'
       }`}
     >
+      {/* Skip to main content */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:text-gray-900 focus:text-sm focus:font-semibold"
+      >
+        Ir para o conteúdo principal
+      </a>
       <div className="max-w-7xl mx-auto px-5 md:px-10 h-20 flex items-center justify-between">
         {/* Logo */}
-        <a href="#" className="flex items-center gap-3 group">
+        <a href="#" aria-label={`${clinic.name} - Página inicial`} className="flex items-center gap-3 group">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg transition-transform duration-300 group-hover:scale-105"
             style={{
@@ -42,7 +50,7 @@ export default function NavBar({ whatsappUrl }) {
         </a>
 
         {/* Nav links */}
-        <nav className="hidden lg:flex items-center gap-8 text-[13px] font-medium text-gray-500">
+        <nav aria-label="Navegação principal" className="hidden lg:flex items-center gap-8 text-[13px] font-medium text-gray-500">
           {[
             { label: 'Sobre', href: '#beneficios' },
             { label: 'Galeria', href: '#galeria' },
@@ -73,9 +81,10 @@ export default function NavBar({ whatsappUrl }) {
             boxShadow: '0 4px 14px rgba(37, 211, 102, 0.3)',
           }}
         >
-          <WhatsAppIcon className="w-4 h-4" />
+          <WhatsAppIcon className="w-4 h-4" aria-hidden="true" />
           <span className="hidden sm:inline">Agendar consulta</span>
           <span className="sm:hidden">Agendar</span>
+          <span className="sr-only"> via WhatsApp</span>
         </a>
       </div>
     </header>
