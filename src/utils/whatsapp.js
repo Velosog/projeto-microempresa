@@ -88,11 +88,18 @@ export function renderTemplate(template, data = {}) {
     return value
   })
 
-  // Clean up double spaces and empty sentences
+  // Clean up lines where the field was empty (e.g. "Convênio: \n" → removed)
   result = result
-    .replace(/\.\s*\./g, '.')
-    .replace(/:\s*\./g, '.')
-    .replace(/\s{2,}/g, ' ')
+    .split('\n')
+    .filter((line) => {
+      const trimmed = line.trim()
+      // Remove lines that are just a label with no value (e.g. "Convênio: " or "Queixa: ")
+      if (/^.+:\s*$/.test(trimmed)) return false
+      // Remove completely empty lines only if consecutive
+      return true
+    })
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n') // max 1 blank line between sections
     .trim()
 
   return result
