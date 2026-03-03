@@ -1,13 +1,16 @@
+import { lazy, Suspense } from 'react'
 import { useClinic } from '../context/ClinicContext'
 import NavBar from '../components/sections/NavBar'
 import HeroSection from '../components/sections/HeroSection'
-import BenefitsSection from '../components/sections/BenefitsSection'
-import GallerySection from '../components/sections/GallerySection'
-import HowItWorksSection from '../components/sections/HowItWorksSection'
-import ServicesSection from '../components/sections/ServicesSection'
-import InsuranceSection from '../components/sections/InsuranceSection'
-import CtaSection from '../components/sections/CtaSection'
-import Footer from '../components/sections/Footer'
+
+// Lazy-load below-the-fold sections for faster initial paint
+const BenefitsSection = lazy(() => import('../components/sections/BenefitsSection'))
+const GallerySection = lazy(() => import('../components/sections/GallerySection'))
+const HowItWorksSection = lazy(() => import('../components/sections/HowItWorksSection'))
+const ServicesSection = lazy(() => import('../components/sections/ServicesSection'))
+const InsuranceSection = lazy(() => import('../components/sections/InsuranceSection'))
+const CtaSection = lazy(() => import('../components/sections/CtaSection'))
+const Footer = lazy(() => import('../components/sections/Footer'))
 
 /**
  * Premium dental clinic landing page.
@@ -21,13 +24,15 @@ export default function Home() {
     <main id="main-content" className="min-h-screen font-sans antialiased text-gray-900 bg-white overflow-x-hidden">
       <NavBar whatsappUrl={whatsappUrl} />
       <HeroSection whatsappUrl={whatsappUrl} />
-      <BenefitsSection />
-      <GallerySection />
-      <HowItWorksSection />
-      <ServicesSection />
-      <InsuranceSection />
-      <CtaSection whatsappUrl={whatsappUrl} />
-      <Footer />
+      <Suspense fallback={null}>
+        <BenefitsSection />
+        <GallerySection />
+        <HowItWorksSection />
+        <ServicesSection />
+        <InsuranceSection />
+        <CtaSection whatsappUrl={whatsappUrl} />
+        <Footer />
+      </Suspense>
     </main>
   )
 }
