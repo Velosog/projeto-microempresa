@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import clinic from '../data/clinic.json'
+import { buildWhatsAppUrl } from '../utils/whatsapp'
 
 /**
  * Premium dental clinic landing page.
@@ -15,10 +16,7 @@ export default function Home() {
     document.title = `${clinic.name} – Atendimento Odontológico 24h`
   }, [])
 
-  const whatsappUrl = buildWhatsappUrl(
-    clinic.whatsapp,
-    'Olá! Quero agendar uma consulta.'
-  )
+  const whatsappUrl = buildWhatsAppUrl()
 
   return (
     <main className="min-h-screen font-sans antialiased text-gray-900 bg-white overflow-x-hidden">
@@ -1139,10 +1137,6 @@ function AestheticIcon({ className }) {
 /* ──────────────────────────────────────────────
    HELPERS
 ────────────────────────────────────────────── */
-function buildWhatsappUrl(number, text) {
-  return `https://wa.me/${number}?text=${encodeURIComponent(text)}`
-}
-
 function formatPhone(phone) {
   const digits = phone.replace(/\D/g, '')
   if (digits.length === 13) {

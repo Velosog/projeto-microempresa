@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import MessageBubble from './MessageBubble'
 import clinic from '../data/clinic.json'
+import { buildWhatsAppUrl, saveLeadData, getLeadData } from '../utils/whatsapp'
 
 const MAX_SESSION_MESSAGES = clinic.chatbot.maxMessages ?? 20
 const SESSION_ID_KEY = 'dental_chat_session_id'
@@ -15,8 +16,22 @@ function getOrCreateSessionId() {
 }
 
 /**
+ * Lead qualification questions asked naturally after the greeting.
+ * Each entry maps a leadData key to a conversational question.
+ */
+const LEAD_QUESTIONS = [
+  { key: 'procedure', question: 'Para começar, qual procedimento ou tratamento você está buscando?' },
+  { key: 'urgency', question: 'Entendi! E essa questão é urgente ou pode aguardar um agendamento normal?' },
+  { key: 'firstTime', question: 'É a sua primeira vez aqui na clínica?' },
+  { key: 'insurance', question: 'Você utiliza algum convênio ou prefere atendimento particular?' },
+  { key: 'preferredTime', question: 'Qual o melhor dia e turno para você? (manhã, tarde...)' },
+  { key: 'complaint', question: 'Por último, pode resumir sua principal queixa em uma frase curta?' },
+]
+
+/**
  * The full chat window: message list + input bar.
- * Handles API calls, session state and typing indicators.
+ * Handles API calls, session state, typing indicators,
+ * and lead qualification flow.
  */
 export default function ChatWindow({ onClose }) {
   const [messages, setMessages] = useState([])
@@ -25,6 +40,9 @@ export default function ChatWindow({ onClose }) {
   const [isBlocked, setIsBlocked] = useState(false)
   const [blockedMessage, setBlockedMessage] = useState('')
   const [sessionId] = useState(getOrCreateSessionId)
+  const [leadData, setLeadData] = useState(() => getLeadData())
+  const [qualifyStep, setQualifyStep] = useState(-1) // -1 = not started, 0..5 = asking, 6 = done
+  const [isQualifying, setIsQualifying] = useState(false)
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
   const hasGreeted = useRef(false)
@@ -38,7 +56,12 @@ export default function ChatWindow({ onClose }) {
     scrollToBottom()
   }, [messages, scrollToBottom])
 
-  // Send greeting on first open
+  // Persist lead data whenever it changes
+  useEffect(() => {
+    saveLeadData(leadData)
+  }, [leadData])
+
+  // Send greeting on first open, then start qualification
   useEffect(() => {
     if (hasGreeted.current) return
     hasGreeted.current = true
@@ -51,9 +74,63 @@ export default function ChatWindow({ onClose }) {
     }
     setMessages([greeting])
 
-    // Focus input after greeting
+    // Start qualification after a brief pause
+    setTimeout(() => {
+      setQualifyStep(0)
+      setIsQualifying(true)
+    }, 1200)
+
     setTimeout(() => inputRef.current?.focus(), 300)
   }, [])
+
+  // Push the next qualification question as a bot message
+  useEffect(() => {
+    if (!isQualifying || qualifyStep < 0 || qualifyStep >= LEAD_QUESTIONS.length) return
+
+    const timer = setTimeout(() => {
+      const q = LEAD_QUESTIONS[qualifyStep]
+      const botMsg = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: q.question,
+        timestamp: Date.now(),
+      }
+      setMessages((prev) => [...prev, botMsg])
+    }, 600)
+
+    return () => clearTimeout(timer)
+  }, [qualifyStep, isQualifying])
+
+  function handleQualifyAnswer(text) {
+    const currentQ = LEAD_QUESTIONS[qualifyStep]
+    if (!currentQ) return false
+
+    // Save the answer
+    setLeadData((prev) => ({ ...prev, [currentQ.key]: text }))
+
+    const nextStep = qualifyStep + 1
+    if (nextStep >= LEAD_QUESTIONS.length) {
+      // Qualification complete — send summary + WhatsApp CTA
+      setIsQualifying(false)
+      setQualifyStep(nextStep)
+
+      setTimeout(() => {
+        const summaryMsg = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content:
+            'Perfeito! Já tenho todas as informações para agilizar seu atendimento. ' +
+            'Clique no botão abaixo para falar diretamente com a equipe pelo WhatsApp — ' +
+            'sua mensagem já vai preenchida com tudo que conversamos! [WHATSAPP_CTA]',
+          timestamp: Date.now(),
+        }
+        setMessages((prev) => [...prev, summaryMsg])
+      }, 600)
+    } else {
+      setQualifyStep(nextStep)
+    }
+    return true
+  }
 
   async function sendMessage(e) {
     e.preventDefault()
@@ -69,10 +146,17 @@ export default function ChatWindow({ onClose }) {
 
     setMessages((prev) => [...prev, userMsg])
     setInput('')
+
+    // If we're in qualification flow, handle locally
+    if (isQualifying && qualifyStep >= 0 && qualifyStep < LEAD_QUESTIONS.length) {
+      handleQualifyAnswer(text)
+      return
+    }
+
+    // Otherwise, send to API
     setIsLoading(true)
 
     try {
-      // Build history for context (last 5 exchanges = 10 messages)
       const historyForApi = messages
         .filter((m) => m.role !== 'system')
         .slice(-10)
@@ -113,6 +197,9 @@ export default function ChatWindow({ onClose }) {
         return
       }
 
+      // Try to extract lead info from AI responses
+      extractLeadHints(data.reply, text)
+
       const assistantMsg = {
         id: crypto.randomUUID(),
         role: 'assistant',
@@ -121,7 +208,6 @@ export default function ChatWindow({ onClose }) {
       }
       setMessages((prev) => [...prev, assistantMsg])
 
-      // Block UI if session limit reached
       if (data.remaining === 0 || messages.length + 2 >= MAX_SESSION_MESSAGES) {
         setIsBlocked(true)
         setBlockedMessage(
@@ -143,10 +229,34 @@ export default function ChatWindow({ onClose }) {
     }
   }
 
-  const whatsappText = encodeURIComponent(
-    'Olá! Vim pelo site e gostaria de agendar uma consulta.'
-  )
-  const whatsappUrl = `https://wa.me/${clinic.whatsapp}?text=${whatsappText}`
+  /**
+   * Tries to infer lead data from free conversation with the AI.
+   * This enriches the WhatsApp pre-fill even after qualification.
+   */
+  function extractLeadHints(reply, userText) {
+    const lower = userText.toLowerCase()
+    setLeadData((prev) => {
+      const updated = { ...prev }
+      // Detect service mentions
+      const services = clinic.services.map((s) => s.toLowerCase())
+      for (const svc of services) {
+        if (lower.includes(svc.split(' ')[0].toLowerCase())) {
+          updated.procedure = updated.procedure || svc
+          break
+        }
+      }
+      // Detect insurance mentions
+      for (const ins of clinic.insurances) {
+        if (lower.includes(ins.toLowerCase())) {
+          updated.insurance = updated.insurance || ins
+          break
+        }
+      }
+      return updated
+    })
+  }
+
+  const whatsappUrl = buildWhatsAppUrl(leadData)
 
   return (
     <div className="flex flex-col h-full">
@@ -203,7 +313,7 @@ export default function ChatWindow({ onClose }) {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 bg-white space-y-1">
         {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} />
+          <MessageBubble key={msg.id} message={msg} leadData={leadData} />
         ))}
 
         {isLoading && <TypingIndicator />}
@@ -241,7 +351,11 @@ export default function ChatWindow({ onClose }) {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Digite sua mensagem..."
+            placeholder={
+              isQualifying
+                ? 'Responda ou digite "pular" para avançar...'
+                : 'Digite sua mensagem...'
+            }
             maxLength={500}
             disabled={isLoading}
             className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors disabled:opacity-50 placeholder-gray-400"

@@ -1,11 +1,12 @@
 import clinic from '../data/clinic.json'
+import { buildWhatsAppUrl } from '../utils/whatsapp'
 
 /**
  * Renders a single message bubble in the chat window.
  * Supports 'user' and 'assistant' roles.
  * Detects the [WHATSAPP_CTA] marker and renders a CTA button.
  */
-export default function MessageBubble({ message }) {
+export default function MessageBubble({ message, leadData }) {
   const isUser = message.role === 'user'
   const isSystem = message.role === 'system'
 
@@ -16,10 +17,7 @@ export default function MessageBubble({ message }) {
     .replace('[WHATSAPP_CTA]', '')
     .trim()
 
-  const whatsappText = encodeURIComponent(
-    'Olá! Vim pelo site e gostaria de agendar uma consulta.'
-  )
-  const whatsappUrl = `https://wa.me/${clinic.whatsapp}?text=${whatsappText}`
+  const whatsappUrl = buildWhatsAppUrl(leadData)
 
   if (isSystem) {
     return (
