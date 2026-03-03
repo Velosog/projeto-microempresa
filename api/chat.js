@@ -158,7 +158,7 @@ export default async function handler(req, res) {
 
     if (!openaiRes.ok) {
       const errBody = await openaiRes.text()
-      console.error(`[OPENAI_ERROR] status=${openaiRes.status} body=${errBody}`)
+      console.error(`[OPENAI_ERROR] status=${openaiRes.status} body=${errBody.slice(0, 200)}`)
       return res.status(502).json({
         error:
           'Não consegui processar sua mensagem agora. Tente novamente ou fale pelo WhatsApp.',

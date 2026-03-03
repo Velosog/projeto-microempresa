@@ -36,3 +36,7 @@ lerna-debug.log*
 
 # Vercel
 .vercel/
+.vercel
+
+# Coverage
+coverage/
