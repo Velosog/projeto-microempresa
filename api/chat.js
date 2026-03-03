@@ -22,7 +22,7 @@ import clinicData from '../src/data/clinic.json' assert { type: 'json' }
 import faqData from '../src/data/faq.json' assert { type: 'json' }
 
 import { buildSystemPrompt, findMatchingFaq, sanitizeInput } from '../src/utils/buildPrompt.js'
-import { checkIpRateLimit, checkSessionLimit } from '../src/utils/rateLimiter.js'
+import { checkIpRateLimit, checkIpDailyLimit, checkSessionLimit } from '../src/utils/rateLimiter.js'
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions'
 const MODEL = 'gpt-4o-mini'
@@ -68,6 +68,13 @@ export default async function handler(req, res) {
   if (!ipCheck.allowed) {
     console.log(`[RATE_LIMIT] IP blocked: ${ip}`)
     return res.status(429).json({ error: ipCheck.reason })
+  }
+
+  // ── 2b. IP daily quota ──────────────────────────────────────────
+  const dailyCheck = checkIpDailyLimit(ip)
+  if (!dailyCheck.allowed) {
+    console.log(`[DAILY_LIMIT] IP daily quota exceeded: ${ip}`)
+    return res.status(429).json({ error: dailyCheck.reason })
   }
 
   // ── 3. Session message limit ────────────────────────────────────
