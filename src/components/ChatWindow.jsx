@@ -17,17 +17,75 @@ function getOrCreateSessionId() {
 }
 
 /**
- * Lead qualification questions asked naturally after the greeting.
- * Each entry maps a leadData key to a conversational question.
+ * Lead qualification questions with contextual acknowledgments.
+ * Each entry maps a leadData key to a question and human-like reactions.
+ * The `acks` array provides varied, empathetic acknowledgments based on user's answer.
  */
 const LEAD_QUESTIONS = [
-  { key: 'procedure', question: 'Para começar, qual procedimento ou tratamento você está buscando?' },
-  { key: 'urgency', question: 'Entendi! E essa questão é urgente ou pode aguardar um agendamento normal?' },
-  { key: 'firstTime', question: 'É a sua primeira vez aqui na clínica?' },
-  { key: 'insurance', question: 'Você utiliza algum convênio ou prefere atendimento particular?' },
-  { key: 'preferredTime', question: 'Qual o melhor dia e turno para você? (manhã, tarde...)' },
-  { key: 'complaint', question: 'Por último, pode resumir sua principal queixa em uma frase curta?' },
+  {
+    key: 'procedure',
+    question: 'Me conta, o que você tá precisando? Pode ser limpeza, aparelho, clareamento... fica à vontade!',
+    acks: [
+      (ans) => `Ah, ${ans.toLowerCase().includes('clareamento') ? 'clareamento é super procurado aqui!' : ans.toLowerCase().includes('aparelho') || ans.toLowerCase().includes('ortodontia') ? 'ortodontia muda demais o sorriso, viu!' : 'boa escolha!'}`,
+      () => 'Que bom que veio falar com a gente!',
+      () => 'Perfeito, anotei aqui!',
+    ],
+  },
+  {
+    key: 'urgency',
+    question: 'E como tá essa situação — tá te incomodando muito ou dá pra esperar um pouquinho pra agendar com calma?',
+    acks: [
+      (ans) => ans.toLowerCase().includes('urgent') || ans.toLowerCase().includes('dor') || ans.toLowerCase().includes('muito')
+        ? 'Entendo, vamos tentar encaixar o quanto antes então!'
+        : 'Tranquilo, vamos achar o melhor horário pra você.',
+      () => 'Tá anotado!',
+    ],
+  },
+  {
+    key: 'firstTime',
+    question: 'Você já veio aqui na clínica antes ou seria a primeira vez?',
+    acks: [
+      (ans) => ans.toLowerCase().includes('primeira') || ans.toLowerCase().includes('não') || ans.toLowerCase().includes('nunca')
+        ? 'Que legal, vai gostar! O pessoal aqui é muito atencioso.'
+        : 'Que bom te ter de volta!',
+      () => 'Show!',
+    ],
+  },
+  {
+    key: 'insurance',
+    question: 'Você tem algum convênio ou prefere particular? Aceitamos Unimed, Bradesco, SulAmérica e outros.',
+    acks: [
+      (ans) => ans.toLowerCase().includes('particular') ? 'Sem problema, e a gente parcela em até 12x!' : 'Ótimo, vou anotar aqui.',
+      () => 'Beleza!',
+    ],
+  },
+  {
+    key: 'preferredTime',
+    question: 'Qual horário fica melhor pra você? De manhã, à tarde... algum dia da semana de preferência?',
+    acks: [
+      () => 'Perfeito, vou passar isso pro pessoal da agenda.',
+      () => 'Anotado!',
+    ],
+  },
+  {
+    key: 'complaint',
+    question: 'Pra finalizar, me conta rapidinho: qual é a principal queixa ou o que mais te incomoda?',
+    acks: [
+      () => 'Obrigado por compartilhar! Isso ajuda muito na hora da consulta.',
+      () => 'Entendi direitinho.',
+    ],
+  },
 ]
+
+/**
+ * Picks a random acknowledgment from the question's acks array.
+ */
+function getAck(questionIndex, userAnswer) {
+  const q = LEAD_QUESTIONS[questionIndex]
+  if (!q || !q.acks || q.acks.length === 0) return ''
+  const ack = q.acks[Math.floor(Math.random() * q.acks.length)]
+  return typeof ack === 'function' ? ack(userAnswer) : ack
+}
 
 /**
  * Keywords that suggest the user in "question" mode wants to book.
@@ -109,7 +167,7 @@ export default function ChatWindow({ onClose }) {
         timestamp: Date.now(),
       }
       setMessages((prev) => [...prev, botMsg])
-    }, 500)
+    }, 900)
 
     return () => clearTimeout(timer)
   }, [qualifyStep, qualifyDone, chatMode])
@@ -122,12 +180,12 @@ export default function ChatWindow({ onClose }) {
     setShowModeSelector(false)
 
     if (mode === 'booking') {
-      // Start qualification flow
+      // Start qualification flow with a warm intro
       setTimeout(() => {
         const introMsg = {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: 'Ótimo! Vou te fazer algumas perguntas rápidas para agilizar seu agendamento. 😊',
+          content: 'Ótimo, vou te ajudar com isso! Vou fazer umas perguntinhas rápidas pra já adiantar tudo pro seu atendimento, tá?',
           timestamp: Date.now(),
         }
         setMessages((prev) => [...prev, introMsg])
@@ -141,20 +199,20 @@ export default function ChatWindow({ onClose }) {
           }
           setMessages((prev) => [...prev, firstQ])
           inputRef.current?.focus()
-        }, 600)
-      }, 300)
+        }, 800)
+      }, 400)
     } else {
-      // Question mode — prompt free chat
+      // Question mode — warm and inviting
       setTimeout(() => {
         const promptMsg = {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: 'Sem problemas! Pode perguntar o que quiser sobre nossos tratamentos, horários, convênios ou qualquer outra dúvida. Estou aqui para ajudar! 😊',
+          content: 'Pode mandar! Tô aqui pra tirar qualquer dúvida — seja sobre tratamentos, valores, convênios, horários... o que precisar!',
           timestamp: Date.now(),
         }
         setMessages((prev) => [...prev, promptMsg])
         inputRef.current?.focus()
-      }, 300)
+      }, 400)
     }
   }
 
@@ -173,7 +231,7 @@ export default function ChatWindow({ onClose }) {
         const offerMsg = {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: 'Parece que você quer agendar uma consulta! Posso te guiar pelo processo rápido de pré-triagem, ou se preferir, continue tirando suas dúvidas aqui mesmo.',
+          content: 'Opa, quer agendar? Posso te ajudar rapidinho com isso! Ou se preferir, continua perguntando aqui mesmo, sem problema.',
           timestamp: Date.now(),
         }
         setMessages((prev) => [...prev, offerMsg])
@@ -191,25 +249,51 @@ export default function ChatWindow({ onClose }) {
     setLeadData((prev) => ({ ...prev, [currentQ.key]: text }))
 
     const nextStep = qualifyStep + 1
+    const ack = getAck(qualifyStep, text)
+
     if (nextStep >= LEAD_QUESTIONS.length) {
-      // Qualification complete — send summary + WhatsApp CTA
+      // Qualification complete — warm closing + WhatsApp CTA
       setQualifyDone(true)
       setQualifyStep(nextStep)
 
       setTimeout(() => {
-        const summaryMsg = {
+        const closingMsg = {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content:
-            'Perfeito! Já tenho todas as informações para agilizar seu atendimento. ' +
-            'Clique no botão abaixo para falar diretamente com a equipe pelo WhatsApp — ' +
-            'sua mensagem já vai preenchida com tudo que conversamos! [WHATSAPP_CTA]',
+          content: ack
+            ? `${ack} Pronto, já tenho tudo que preciso!`
+            : 'Pronto, já tenho tudo que preciso!',
           timestamp: Date.now(),
         }
-        setMessages((prev) => [...prev, summaryMsg])
+        setMessages((prev) => [...prev, closingMsg])
+
+        setTimeout(() => {
+          const ctaMsg = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content:
+              'Agora é só clicar no botão abaixo pra falar com a equipe pelo WhatsApp. ' +
+              'A mensagem já vai prontinha com tudo que a gente conversou aqui! [WHATSAPP_CTA]',
+            timestamp: Date.now(),
+          }
+          setMessages((prev) => [...prev, ctaMsg])
+        }, 600)
       }, 500)
     } else {
+      // Show acknowledgment + next question with natural delay
       setQualifyStep(nextStep)
+
+      if (ack) {
+        setTimeout(() => {
+          const ackMsg = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: ack,
+            timestamp: Date.now(),
+          }
+          setMessages((prev) => [...prev, ackMsg])
+        }, 400)
+      }
     }
   }
 

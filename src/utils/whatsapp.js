@@ -57,24 +57,45 @@ export function getLeadData() {
 
 /**
  * Replaces {placeholders} in a template string with data values.
- * Missing fields are replaced with "(não informado)".
+ * Missing fields are replaced with a dash. Produces natural-sounding text.
  */
 export function renderTemplate(template, data = {}) {
+  // Normalize firstTime to a natural phrase
+  let firstTimeText = data.firstTime || ''
+  if (firstTimeText) {
+    const lower = firstTimeText.toLowerCase()
+    if (lower.includes('sim') || lower.includes('primeira') || lower.includes('nunca')) {
+      firstTimeText = 'É minha primeira vez na clínica.'
+    } else if (lower.includes('não') || lower.includes('já')) {
+      firstTimeText = 'Já sou paciente da clínica.'
+    }
+  }
+
   const merged = {
     clinicName: clinic.name,
     procedure: data.procedure || '',
     urgency: data.urgency || '',
-    firstTime: data.firstTime || '',
+    firstTime: firstTimeText,
     insurance: data.insurance || '',
     preferredTime: data.preferredTime || '',
     complaint: data.complaint || '',
   }
 
-  return template.replace(/\{(\w+)\}/g, (match, key) => {
+  // Replace placeholders; remove sentences with empty fields instead of showing "(não informado)"
+  let result = template.replace(/\{(\w+)\}/g, (match, key) => {
     const value = merged[key]
-    if (value === undefined || value === '') return '(não informado)'
+    if (value === undefined || value === '') return ''
     return value
   })
+
+  // Clean up double spaces and empty sentences
+  result = result
+    .replace(/\.\s*\./g, '.')
+    .replace(/:\s*\./g, '.')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+
+  return result
 }
 
 /**
