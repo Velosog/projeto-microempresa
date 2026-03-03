@@ -18,16 +18,11 @@
  *  - Track per-client usage via tenant_id
  */
 
-import { createRequire } from 'module'
-const require = createRequire(import.meta.url)
-
-// Vercel serves static JSON from the project root at runtime.
-// We import them with require() so the function works in the Node runtime.
 import clinicData from '../src/data/clinic.json' assert { type: 'json' }
 import faqData from '../src/data/faq.json' assert { type: 'json' }
 
 import { buildSystemPrompt, findMatchingFaq, sanitizeInput } from '../src/utils/buildPrompt.js'
-import { checkIpRateLimit, checkSessionLimit } from '../src/utils/rateLimiter.js'
+import { checkIpRateLimit, checkIpDailyLimit, checkSessionLimit } from '../src/utils/rateLimiter.js'
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions'
 const MODEL = 'gpt-4o-mini'
@@ -75,6 +70,13 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: ipCheck.reason })
   }
 
+  // ── 2b. IP daily quota ──────────────────────────────────────────
+  const dailyCheck = checkIpDailyLimit(ip)
+  if (!dailyCheck.allowed) {
+    console.log(`[DAILY_LIMIT] IP daily quota exceeded: ${ip}`)
+    return res.status(429).json({ error: dailyCheck.reason })
+  }
+
   // ── 3. Session message limit ────────────────────────────────────
   const sessionCheck = checkSessionLimit(sessionId)
   if (!sessionCheck.allowed) {
@@ -90,11 +92,60 @@ export default async function handler(req, res) {
   const faqMatch = findMatchingFaq(cleanMessage, faqData)
 
   if (faqMatch && faqMatch.score >= 2) {
-    // High-confidence FAQ hit – return directly without calling AI
-    const faqReply = `${faqMatch.faq.answer}\n\nSe precisar de mais informações ou quiser agendar, fale conosco pelo WhatsApp. [WHATSAPP_CTA]`
+    // High-confidence FAQ hit – pass through AI for natural rephrasing
     console.log(
       `[FAQ_HIT] id=${faqMatch.faq.id} score=${faqMatch.score} category=${faqMatch.faq.category}`
     )
+
+    const OPENAI_KEY = process.env.OPENAI_API_KEY
+    if (OPENAI_KEY) {
+      // Use AI to rephrase the FAQ answer naturally
+      try {
+        const rephraseRes = await fetch(OPENAI_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${OPENAI_KEY}`,
+          },
+          body: JSON.stringify({
+            model: MODEL,
+            messages: [
+              {
+                role: 'system',
+                content: `Você é a Bia, atendente virtual simpática da ${clinicData.name}. Reescreva a resposta abaixo com suas próprias palavras, de forma natural e acolhedora, como se estivesse conversando pelo celular. Use no máximo 2-3 frases curtas. Termine com [WHATSAPP_CTA].`,
+              },
+              {
+                role: 'user',
+                content: `Pergunta do paciente: "${cleanMessage}"\n\nResposta base: "${faqMatch.faq.answer}"`,
+              },
+            ],
+            max_tokens: 200,
+            temperature: 0.7,
+          }),
+        })
+
+        if (rephraseRes.ok) {
+          const rephraseData = await rephraseRes.json()
+          const rephrasedReply = rephraseData.choices?.[0]?.message?.content?.trim()
+          if (rephrasedReply) {
+            const finalFaqReply = rephrasedReply.includes('[WHATSAPP_CTA]')
+              ? rephrasedReply
+              : `${rephrasedReply}\n\n[WHATSAPP_CTA]`
+            return res.status(200).json({
+              reply: finalFaqReply,
+              source: 'faq',
+              remaining: sessionCheck.remaining,
+            })
+          }
+        }
+      } catch (err) {
+        console.error('[FAQ_REPHRASE_ERROR]', err)
+        // Fall through to static FAQ below
+      }
+    }
+
+    // Fallback: return FAQ answer directly if AI rephrase fails
+    const faqReply = `${faqMatch.faq.answer}\n\nSe quiser saber mais ou agendar, é só chamar no WhatsApp! [WHATSAPP_CTA]`
     return res.status(200).json({
       reply: faqReply,
       source: 'faq',
@@ -149,14 +200,14 @@ export default async function handler(req, res) {
         model: MODEL,
         messages,
         max_tokens: MAX_TOKENS,
-        temperature: 0.4,
-        frequency_penalty: 0.3,
+        temperature: 0.65,
+        frequency_penalty: 0.4,
       }),
     })
 
     if (!openaiRes.ok) {
       const errBody = await openaiRes.text()
-      console.error(`[OPENAI_ERROR] status=${openaiRes.status} body=${errBody}`)
+      console.error(`[OPENAI_ERROR] status=${openaiRes.status} body=${errBody.slice(0, 200)}`)
       return res.status(502).json({
         error:
           'Não consegui processar sua mensagem agora. Tente novamente ou fale pelo WhatsApp.',

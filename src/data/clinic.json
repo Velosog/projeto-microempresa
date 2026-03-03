@@ -55,8 +55,10 @@
     "instagram": "https://instagram.com/odontovida",
     "facebook": "https://facebook.com/odontovida"
   },
+  "whatsappPrefillTemplate": "Oi! Tudo bem? Vim pelo site da {clinicName} e conversei com a Bia no chat.\n\nProcedimento: {procedure}\nUrgência: {urgency}\n{firstTime}\nConvênio: {insurance}\nMelhor horário: {preferredTime}\nQueixa: {complaint}\n\nPodem me ajudar?",
+  "whatsappPrefillFallback": "Oi! Tudo bem? Vim pelo site da {clinicName} e queria marcar uma consulta. Me ajudam com os horários?",
   "chatbot": {
-    "greeting": "Olá! Seja bem-vindo(a) à OdontoVida Clínica. Sou o assistente virtual da clínica e estou aqui para ajudar você. Como posso te ajudar hoje?",
+    "greeting": "Oi! Eu sou a Bia, atendente virtual da OdontoVida. Que bom que você apareceu por aqui! Como posso te ajudar?",
     "maxMessages": 20,
     "sessionTimeout": 1800
   }
