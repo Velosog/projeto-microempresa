@@ -41,8 +41,8 @@ export default function ChatWindow({ onClose }) {
   const [blockedMessage, setBlockedMessage] = useState('')
   const [sessionId] = useState(getOrCreateSessionId)
   const [leadData, setLeadData] = useState(() => getLeadData())
-  const [qualifyStep, setQualifyStep] = useState(-1) // -1 = not started, 0..5 = asking, 6 = done
-  const [isQualifying, setIsQualifying] = useState(false)
+  const [qualifyStep, setQualifyStep] = useState(0) // 0..5 = asking, 6+ = done
+  const [qualifyDone, setQualifyDone] = useState(false)
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
   const hasGreeted = useRef(false)
@@ -61,7 +61,7 @@ export default function ChatWindow({ onClose }) {
     saveLeadData(leadData)
   }, [leadData])
 
-  // Send greeting on first open, then start qualification
+  // Send greeting + first qualification question on first open
   useEffect(() => {
     if (hasGreeted.current) return
     hasGreeted.current = true
@@ -74,18 +74,23 @@ export default function ChatWindow({ onClose }) {
     }
     setMessages([greeting])
 
-    // Start qualification after a brief pause
+    // Show first qualification question shortly after greeting
     setTimeout(() => {
-      setQualifyStep(0)
-      setIsQualifying(true)
-    }, 1200)
+      const firstQ = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: LEAD_QUESTIONS[0].question,
+        timestamp: Date.now(),
+      }
+      setMessages((prev) => [...prev, firstQ])
+    }, 800)
 
-    setTimeout(() => inputRef.current?.focus(), 300)
+    setTimeout(() => inputRef.current?.focus(), 400)
   }, [])
 
-  // Push the next qualification question as a bot message
+  // Push subsequent qualification questions (step 1+)
   useEffect(() => {
-    if (!isQualifying || qualifyStep < 0 || qualifyStep >= LEAD_QUESTIONS.length) return
+    if (qualifyDone || qualifyStep === 0 || qualifyStep >= LEAD_QUESTIONS.length) return
 
     const timer = setTimeout(() => {
       const q = LEAD_QUESTIONS[qualifyStep]
@@ -96,14 +101,14 @@ export default function ChatWindow({ onClose }) {
         timestamp: Date.now(),
       }
       setMessages((prev) => [...prev, botMsg])
-    }, 600)
+    }, 500)
 
     return () => clearTimeout(timer)
-  }, [qualifyStep, isQualifying])
+  }, [qualifyStep, qualifyDone])
 
-  function handleQualifyAnswer(text) {
+  function advanceQualification(text) {
     const currentQ = LEAD_QUESTIONS[qualifyStep]
-    if (!currentQ) return false
+    if (!currentQ) return
 
     // Save the answer
     setLeadData((prev) => ({ ...prev, [currentQ.key]: text }))
@@ -111,7 +116,7 @@ export default function ChatWindow({ onClose }) {
     const nextStep = qualifyStep + 1
     if (nextStep >= LEAD_QUESTIONS.length) {
       // Qualification complete — send summary + WhatsApp CTA
-      setIsQualifying(false)
+      setQualifyDone(true)
       setQualifyStep(nextStep)
 
       setTimeout(() => {
@@ -125,11 +130,10 @@ export default function ChatWindow({ onClose }) {
           timestamp: Date.now(),
         }
         setMessages((prev) => [...prev, summaryMsg])
-      }, 600)
+      }, 500)
     } else {
       setQualifyStep(nextStep)
     }
-    return true
   }
 
   async function sendMessage(e) {
@@ -147,13 +151,13 @@ export default function ChatWindow({ onClose }) {
     setMessages((prev) => [...prev, userMsg])
     setInput('')
 
-    // If we're in qualification flow, handle locally
-    if (isQualifying && qualifyStep >= 0 && qualifyStep < LEAD_QUESTIONS.length) {
-      handleQualifyAnswer(text)
+    // If qualification is still in progress, handle locally (no API call)
+    if (!qualifyDone && qualifyStep < LEAD_QUESTIONS.length) {
+      advanceQualification(text)
       return
     }
 
-    // Otherwise, send to API
+    // After qualification is done, send to API
     setIsLoading(true)
 
     try {
@@ -237,7 +241,6 @@ export default function ChatWindow({ onClose }) {
     const lower = userText.toLowerCase()
     setLeadData((prev) => {
       const updated = { ...prev }
-      // Detect service mentions
       const services = clinic.services.map((s) => s.toLowerCase())
       for (const svc of services) {
         if (lower.includes(svc.split(' ')[0].toLowerCase())) {
@@ -245,7 +248,6 @@ export default function ChatWindow({ onClose }) {
           break
         }
       }
-      // Detect insurance mentions
       for (const ins of clinic.insurances) {
         if (lower.includes(ins.toLowerCase())) {
           updated.insurance = updated.insurance || ins
@@ -352,8 +354,8 @@ export default function ChatWindow({ onClose }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={
-              isQualifying
-                ? 'Responda ou digite "pular" para avançar...'
+              !qualifyDone
+                ? 'Responda aqui...'
                 : 'Digite sua mensagem...'
             }
             maxLength={500}
